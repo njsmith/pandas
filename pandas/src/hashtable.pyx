@@ -99,7 +99,7 @@ cdef class StringHashTable(HashTable):
     #         kh_resize_str(self.table, size_hint)
 
     def __cinit__(self, int size_hint=1):
-        self.table = kh_init_str()
+        self.table = kh_init_str(NULL)
         if size_hint is not None:
             kh_resize_str(self.table, size_hint)
 
@@ -225,7 +225,7 @@ cdef class Int32HashTable(HashTable):
             kh_resize_int32(self.table, size_hint)
 
     def __cinit__(self):
-        self.table = kh_init_int32()
+        self.table = kh_init_int32(NULL)
 
     def __dealloc__(self):
         kh_destroy_int32(self.table)
@@ -329,7 +329,7 @@ cdef class Int64HashTable(HashTable):
             kh_resize_int64(self.table, size_hint)
 
     def __cinit__(self):
-        self.table = kh_init_int64()
+        self.table = kh_init_int64(NULL)
 
     def __dealloc__(self):
         kh_destroy_int64(self.table)
@@ -535,7 +535,7 @@ def value_count_int64(ndarray[int64_t] values):
         int ret = 0
         list uniques = []
 
-    table = kh_init_int64()
+    table = kh_init_int64(NULL)
     kh_resize_int64(table, n)
 
     for i in range(n):
@@ -548,7 +548,7 @@ def value_count_int64(ndarray[int64_t] values):
             table.vals[k] = 1
 
     # for (k = kh_begin(h); k != kh_end(h); ++k)
-    # 	if (kh_exist(h, k)) kh_value(h, k) = 1;
+    #   if (kh_exist(h, k)) kh_value(h, k) = 1;
     i = 0
     result_keys = np.empty(table.n_occupied, dtype=np.int64)
     result_counts = np.zeros(table.n_occupied, dtype=np.int64)
@@ -569,7 +569,7 @@ cdef class Float64HashTable(HashTable):
             kh_resize_float64(self.table, size_hint)
 
     def __cinit__(self):
-        self.table = kh_init_float64()
+        self.table = kh_init_float64(NULL)
 
     def __len__(self):
         return self.table.size
@@ -677,7 +677,7 @@ cdef class PyObjectHashTable(HashTable):
     cdef kh_pymap_t *table
 
     def __init__(self, size_hint=1):
-        self.table = kh_init_pymap()
+        self.table = kh_init_pymap(NULL)
         kh_resize_pymap(self.table, size_hint)
 
     def __dealloc__(self):

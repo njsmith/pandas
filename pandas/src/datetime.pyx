@@ -328,7 +328,7 @@ def unique_deltas(ndarray[int64_t] arr):
         int ret = 0
         list uniques = []
 
-    table = kh_init_int64()
+    table = kh_init_int64(NULL)
     kh_resize_int64(table, 10)
     for i in range(n - 1):
         val = arr[i + 1] - arr[i]

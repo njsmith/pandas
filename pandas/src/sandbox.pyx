@@ -159,7 +159,7 @@ cdef class Int64HashTable:
             kh_resize_int64(self.table, size_hint)
 
     def __cinit__(self):
-        self.table = kh_init_int64()
+        self.table = kh_init_int64(NULL)
 
     def __dealloc__(self):
         kh_destroy_int64(self.table)
@@ -276,7 +276,7 @@ def test(ndarray arr, Py_ssize_t size_hint):
         Py_ssize_t i, n
         ndarray[Py_ssize_t] indexer
 
-    table = kh_init_pymap()
+    table = kh_init_pymap(NULL)
     kh_resize_pymap(table, size_hint)
 
     data = <PyObject**> arr.data
@@ -311,7 +311,7 @@ def test_str(ndarray arr, Py_ssize_t size_hint):
         Py_ssize_t i, n
         ndarray[Py_ssize_t] indexer
 
-    table = kh_init_str()
+    table = kh_init_str(NULL)
     kh_resize_str(table, size_hint)
 
     data = <PyObject**> arr.data
@@ -368,7 +368,7 @@ def obj_unique(ndarray[object] arr):
     n = len(arr)
     uniques = []
 
-    table = kh_init_pyset()
+    table = kh_init_pyset(NULL)
 
     data = <PyObject**> arr.data
 
@@ -402,7 +402,7 @@ def int64_unique(ndarray[int64_t] arr):
     n = len(arr)
     uniques = np.empty(n, dtype='i8')
 
-    table = kh_init_int64()
+    table = kh_init_int64(NULL)
     kh_resize_int64(table, n)
 
     j = 0

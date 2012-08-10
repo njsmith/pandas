@@ -174,6 +174,7 @@ static const double __ac_HASH_UPPER = 0.77;
 		khint32_t *flags;												\
 		khkey_t *keys;													\
 		khval_t *vals;													\
+		void *user_data;													\
 	} kh_##name##_t;													\
 	extern kh_##name##_t *kh_init_##name();								\
 	extern void kh_destroy_##name(kh_##name##_t *h);					\
@@ -189,9 +190,12 @@ static const double __ac_HASH_UPPER = 0.77;
 		khint32_t *flags;												\
 		khkey_t *keys;													\
 		khval_t *vals;													\
+		void *user_data;													\
 	} kh_##name##_t;													\
-	SCOPE kh_##name##_t *kh_init_##name(void) {								\
-		return (kh_##name##_t*)calloc(1, sizeof(kh_##name##_t));		\
+	SCOPE kh_##name##_t *kh_init_##name(void *user_data) {								\
+		kh_##name##_t *h = (kh_##name##_t*)calloc(1, sizeof(kh_##name##_t));		\
+		h->user_data = user_data;		\
+		return h;		\
 	}																	\
 	SCOPE void kh_destroy_##name(kh_##name##_t *h)						\
 	{																	\
@@ -213,9 +217,9 @@ static const double __ac_HASH_UPPER = 0.77;
 		if (h->n_buckets) {												\
 			khint_t inc, k, i, last, mask;								\
 			mask = h->n_buckets - 1;									\
-			k = __hash_func(key); i = k & mask;							\
+			k = __hash_func(key, h->user_data); i = k & mask;            \
 			inc = __ac_inc(k, mask); last = i; /* inc==1 for linear probing */ \
-			while (!__ac_isempty(h->flags, i) && (__ac_isdel(h->flags, i) || !__hash_equal(h->keys[i], key))) { \
+			while (!__ac_isempty(h->flags, i) && (__ac_isdel(h->flags, i) || !__hash_equal(h->keys[i], key, h->user_data))) { \
 				i = (i + inc) & mask; 									\
 				if (i == last) return h->n_buckets;						\
 			}															\
@@ -250,7 +254,7 @@ static const double __ac_HASH_UPPER = 0.77;
 					__ac_set_isdel_true(h->flags, j);					\
 					while (1) { /* kick-out process; sort of like in Cuckoo hashing */ \
 						khint_t inc, k, i;								\
-						k = __hash_func(key);							\
+						k = __hash_func(key, h->user_data);  \
 						i = k & new_mask;								\
 						inc = __ac_inc(k, new_mask);					\
 						while (!__ac_isempty(new_flags, i)) i = (i + inc) & new_mask; \
@@ -287,11 +291,11 @@ static const double __ac_HASH_UPPER = 0.77;
 		} /* TODO: to implement automatically shrinking; resize() already support shrinking */ \
 		{																\
 			khint_t inc, k, i, site, last, mask = h->n_buckets - 1;		\
-			x = site = h->n_buckets; k = __hash_func(key); i = k & mask; \
+			x = site = h->n_buckets; k = __hash_func(key, h->user_data); i = k & mask; \
 			if (__ac_isempty(h->flags, i)) x = i; /* for speed up */	\
 			else {														\
 				inc = __ac_inc(k, mask); last = i;						\
-				while (!__ac_isempty(h->flags, i) && (__ac_isdel(h->flags, i) || !__hash_equal(h->keys[i], key))) { \
+				while (!__ac_isempty(h->flags, i) && (__ac_isdel(h->flags, i) || !__hash_equal(h->keys[i], key, h->user_data))) { \
 					if (__ac_isdel(h->flags, i)) site = i;				\
 					i = (i + inc) & mask; 								\
 					if (i == last) { x = site; break; }					\
@@ -333,33 +337,33 @@ static const double __ac_HASH_UPPER = 0.77;
   @param  key   The integer [khint32_t]
   @return       The hash value [khint_t]
  */
-#define kh_int_hash_func(key) (khint32_t)(key)
+#define kh_int_hash_func(key, user_data) (khint32_t)(key)
 /*! @function
   @abstract     Integer comparison function
  */
-#define kh_int_hash_equal(a, b) ((a) == (b))
+#define kh_int_hash_equal(a, b, user_data) ((a) == (b))
 /*! @function
   @abstract     64-bit integer hash function
   @param  key   The integer [khint64_t]
   @return       The hash value [khint_t]
  */
-#define kh_int64_hash_func(key) (khint32_t)((key)>>33^(key)^(key)<<11)
+#define kh_int64_hash_func(key, user_data) (khint32_t)((key)>>33^(key)^(key)<<11)
 /*! @function
   @abstract     64-bit integer comparison function
  */
-#define kh_int64_hash_equal(a, b) ((a) == (b))
+#define kh_int64_hash_equal(a, b, user_data) ((a) == (b))
 
 // kludge
 
-#define kh_float64_hash_func _Py_HashDouble
-#define kh_float64_hash_equal kh_int64_hash_equal
+#define kh_float64_hash_func(key, user_data) _Py_HashDouble(key)
+#define kh_float64_hash_equal(a, b, user_data) kh_int64_hash_equal(a, b, user_data)
 
 /*! @function
   @abstract     const char* hash function
   @param  s     Pointer to a null terminated string
   @return       The hash value
  */
-static PANDAS_INLINE khint_t __ac_X31_hash_string(const char *s)
+static PANDAS_INLINE khint_t __ac_X31_hash_string(const char *s, void *user_data)
 {
 	khint_t h = *s;
 	if (h) for (++s ; *s; ++s) h = (h << 5) - h + *s;
@@ -370,13 +374,13 @@ static PANDAS_INLINE khint_t __ac_X31_hash_string(const char *s)
   @param  key   Pointer to a null terminated string [const char*]
   @return       The hash value [khint_t]
  */
-#define kh_str_hash_func(key) __ac_X31_hash_string(key)
+#define kh_str_hash_func __ac_X31_hash_string
 /*! @function
   @abstract     Const char* comparison function
  */
-#define kh_str_hash_equal(a, b) (strcmp(a, b) == 0)
+#define kh_str_hash_equal(a, b, user_data) (strcmp(a, b) == 0)
 
-static PANDAS_INLINE khint_t __ac_Wang_hash(khint_t key)
+static PANDAS_INLINE khint_t __ac_Wang_hash(khint_t key, void *user_data)
 {
     key += ~(key << 15);
     key ^=  (key >> 10);
@@ -386,7 +390,7 @@ static PANDAS_INLINE khint_t __ac_Wang_hash(khint_t key)
     key ^=  (key >> 16);
     return key;
 }
-#define kh_int_hash_func2(k) __ac_Wang_hash((khint_t)key)
+#define kh_int_hash_func2(k, user_data) __ac_Wang_hash((khint_t)key)
 
 /* --- END OF HASH FUNCTIONS --- */
 
@@ -401,9 +405,10 @@ static PANDAS_INLINE khint_t __ac_Wang_hash(khint_t key)
 /*! @function
   @abstract     Initiate a hash table.
   @param  name  Name of the hash table [symbol]
+  @param  user_data  Pointer to pass to hash and equality functions [void *]
   @return       Pointer to the hash table [khash_t(name)*]
  */
-#define kh_init(name) kh_init_##name(void)
+#define kh_init(name, user_data) kh_init_##name(user_data)
 
 /*! @function
   @abstract     Destroy a hash table.
@@ -571,7 +576,6 @@ typedef const char *kh_cstr_t;
 #define KHASH_MAP_INIT_STR(name, khval_t)								\
 	KHASH_INIT(name, kh_cstr_t, khval_t, 1, kh_str_hash_func, kh_str_hash_equal)
 
-
 #include <Python.h>
 
 int PANDAS_INLINE pyobject_cmp(PyObject* a, PyObject* b) {
@@ -584,8 +588,8 @@ int PANDAS_INLINE pyobject_cmp(PyObject* a, PyObject* b) {
 }
 
 
-#define kh_python_hash_func(key) (PyObject_Hash(key))
-#define kh_python_hash_equal(a, b) (pyobject_cmp(a, b))
+#define kh_python_hash_func(key, user_data) (PyObject_Hash(key))
+#define kh_python_hash_equal(a, b, user_data) (pyobject_cmp(a, b))
 
 
 // Python object

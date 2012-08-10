@@ -669,7 +669,7 @@ def value_count_int64(ndarray[int64_t] values):
         int ret = 0
         list uniques = []
 
-    table = kh_init_int64()
+    table = kh_init_int64(NULL)
     kh_resize_int64(table, n)
 
     for i in range(n):
@@ -682,7 +682,7 @@ def value_count_int64(ndarray[int64_t] values):
             table.vals[k] = 1
 
     # for (k = kh_begin(h); k != kh_end(h); ++k)
-    # 	if (kh_exist(h, k)) kh_value(h, k) = 1;
+    #   if (kh_exist(h, k)) kh_value(h, k) = 1;
     i = 0
     result_keys = np.empty(table.n_occupied, dtype=np.int64)
     result_counts = np.zeros(table.n_occupied, dtype=np.int64)
