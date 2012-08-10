@@ -380,6 +380,17 @@ static PANDAS_INLINE khint_t __ac_X31_hash_string(const char *s, void *user_data
  */
 #define kh_str_hash_equal(a, b, user_data) (strcmp(a, b) == 0)
 
+static PANDAS_INLINE khint_t __ac_X31_hash_fixed_string(const char *s, void *user_data)
+{
+	khint_t i, h = 0;
+	for (i = 0 ; i < (khuint64_t)user_data ; ++i)
+        	h = (h << 5) - h + s[i];
+	return h;
+}
+#define kh_fixstr_hash_func __ac_X31_hash_fixed_string
+#define kh_fixstr_hash_equal(a, b, user_data) (memcmp(a, b, (size_t)user_data) == 0)
+
+
 static PANDAS_INLINE khint_t __ac_Wang_hash(khint_t key, void *user_data)
 {
     key += ~(key << 15);
@@ -575,6 +586,21 @@ typedef const char *kh_cstr_t;
  */
 #define KHASH_MAP_INIT_STR(name, khval_t)								\
 	KHASH_INIT(name, kh_cstr_t, khval_t, 1, kh_str_hash_func, kh_str_hash_equal)
+
+/*! @function
+  @abstract     Instantiate a hash map containing fixed size const char* keys
+  @param  name  Name of the hash table [symbol]
+ */
+#define KHASH_SET_INIT_FIXSTR(name)										\
+	KHASH_INIT(name, kh_cstr_t, char, 0, kh_fixstr_hash_func, kh_fixstr_hash_equal)
+
+/*! @function
+  @abstract     Instantiate a hash map containing fixed size const char* keys
+  @param  name  Name of the hash table [symbol]
+  @param  khval_t  Type of values [type]
+ */
+#define KHASH_MAP_INIT_FIXSTR(name, khval_t)								\
+	KHASH_INIT(name, kh_cstr_t, khval_t, 1, kh_fixstr_hash_func, kh_fixstr_hash_equal)
 
 #include <Python.h>
 

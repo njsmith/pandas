@@ -55,6 +55,22 @@ cdef extern from "khash.h":
 
     bint kh_exist_str(kh_str_t*, khiter_t)
 
+    ctypedef struct kh_fixstr_t:
+        khint_t n_buckets, size, n_occupied, upper_bound
+        uint32_t *flags
+        kh_cstr_t *keys
+        Py_ssize_t *vals
+
+    inline kh_fixstr_t* kh_init_fixstr(void *)
+    inline void kh_destroy_fixstr(kh_fixstr_t*)
+    inline void kh_clear_fixstr(kh_fixstr_t*)
+    inline khint_t kh_get_fixstr(kh_fixstr_t*, kh_cstr_t)
+    inline void kh_resize_fixstr(kh_fixstr_t*, khint_t)
+    inline khint_t kh_put_fixstr(kh_fixstr_t*, kh_cstr_t, int*)
+    inline void kh_del_fixstr(kh_fixstr_t*, khint_t)
+
+    bint kh_exist_fixstr(kh_fixstr_t*, khiter_t)
+
     ctypedef struct kh_int64_t:
         khint_t n_buckets, size, n_occupied, upper_bound
         uint32_t *flags
